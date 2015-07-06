@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>ajax-loader.gif</file>
+        <file>loc.png</file>
     </qresource>
 </RCC>

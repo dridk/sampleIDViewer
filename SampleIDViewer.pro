@@ -18,25 +18,29 @@ SOURCES += main.cpp\
     sampleidlistmodel.cpp \
     sampleidlistwidget.cpp \
     qcustomplot.cpp \
-    fsaviewer.cpp \
     abifreader.cpp \
     fsainfowidget.cpp \
     sampleidinfowidget.cpp \
     networkmanager.cpp \
     tools.cpp \
-    filebrowserwidget.cpp
+    filebrowserwidget.cpp \
+    fsaplot.cpp \
+    fsaviewer.cpp \
+    fsapanelwidget.cpp
 
 HEADERS  += mainwindow.h \
     sampleidlistmodel.h \
     sampleidlistwidget.h \
     qcustomplot.h \
-    fsaviewer.h \
     abifreader.h \
     fsainfowidget.h \
     sampleidinfowidget.h \
     networkmanager.h \
     tools.h \
-    filebrowserwidget.h
+    filebrowserwidget.h \
+    fsaplot.h \
+    fsaviewer.h \
+    fsapanelwidget.h
 
 FORMS    += mainwindow.ui
 

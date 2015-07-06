@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     mAnimLabel = new QLabel();
     mListWidget = new SampleIDListWidget;
-    mPlot       = new FsaViewer;
+    mPlot       = new FsaPlot;
     mTabWidget  = new QTabWidget;
     mSplitter   = new QSplitter(Qt::Vertical);
     mBrowserWidget = new FileBrowserWidget();

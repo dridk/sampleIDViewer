@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include <QApplication>
+#include "fsaviewer.h"
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -21,8 +22,13 @@ int main(int argc, char *argv[])
 
 
 
-    MainWindow w;
-    w.show();
+//    MainWindow w;
+//    w.show();
+
+
+    FsaViewer * viewer = new FsaViewer;
+
+    viewer->show();
 
     return a.exec();
 }

@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "sampleidlistwidget.h"
-#include "fsaviewer.h"
+#include "fsaplot.h"
 #include "fsainfowidget.h"
 #include "sampleidinfowidget.h"
 #include "filebrowserwidget.h"
@@ -33,7 +33,7 @@ protected:
 private:
     Ui::MainWindow *ui;
     SampleIDListWidget * mListWidget;
-    FsaViewer * mPlot;
+    FsaPlot * mPlot;
     QTabWidget * mTabWidget;
     QSplitter * mSplitter;
     SampleIDInfoWidget * mSampleIdInfoWidget;

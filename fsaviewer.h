@@ -1,30 +1,24 @@
 #ifndef FSAVIEWER_H
 #define FSAVIEWER_H
 
-#include "qcustomplot.h"
-#include "abifreader.h"
-
-#define ID_X 0
-#define ID_Y1 1
-#define ID_Y2 2
-#define ID_Y3 3
-#define ID_Y4 4
-
-class FsaViewer : public QCustomPlot
+#include <QtWidgets>
+#include "fsaplot.h"
+#include "fsapanelwidget.h"
+class FsaViewer : public QWidget
 {
     Q_OBJECT
 public:
-    FsaViewer(QWidget *parent = 0);
+    explicit FsaViewer(QWidget *parent = 0);
 
 public slots:
     void setFileName(const QString& filename);
 
-
 private:
-    QList<int> mRoxRef;
+    FsaPlot * mPlot;
+    QToolBar * mBar;
+    FsaPanelWidget * mPanel;
 
-   QList< QVector<double> > mDatas;
-
+    QToolButton * mDyeButton;
 
 
 
