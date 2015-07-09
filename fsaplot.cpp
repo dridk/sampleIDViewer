@@ -1,275 +1,341 @@
 #include "fsaplot.h"
 #include <QFileDialog>
-
+#include "linearregression.h"
 FsaPlot::FsaPlot(QWidget *parent)
     :QCustomPlot(parent)
 {
 
+    mR          = NULL;
+    mLeftLine   = new QCPItemLine(this);
+    mBottomLine = new QCPItemLine(this);
+    mTopLine    = new QCPItemLine(this);
 
-    mRoxRef<<35<<50<<75<<100<<139<<150<<160<<200<<250<<300<<340<<350<<400<<450<<490<<500;
-
-
-
-    //    detectPeak(1400, 100, 100000);
-
+    mRefKeys<<35<<50<<75<<100<<139<<150<<160<<200<<250<<300<<340<<350<<400<<450<<490<<500;
 
 }
-
+//====================================================
 int FsaPlot::dyeCount()
 {
-    AbifReader r = AbifReader(mCurrentFile);
-    return r.data("Dye#.1").toInt();
+    return abifData("Dye#.1").toInt();
 }
-
+//====================================================
 QString FsaPlot::dyeName(int id)
 {
-    AbifReader r = AbifReader(mCurrentFile);
-    return r.data(QString("DyeN.%1").arg(id+1)).toString();
+    return abifData(QString("DyeN.%1").arg(id+1)).toString();
+}
+//====================================================
+QColor FsaPlot::dyeColor(int id)
+{
+    QList<QColor> cols;
+    cols<<Qt::blue<<Qt::green<<Qt::black<<Qt::red;
+    return cols.value(id, Qt::lightGray);
+}
+//====================================================
+
+QVector<double> FsaPlot::dyeData(int id)
+{
+    QVector<double> y;
+    QVariantList raw  = abifData(QString("DATA.%1").arg(id+1)).toList();
+
+    for (int i=0; i<raw.size(); ++i)
+        y.append(raw.at(i).toDouble());
+
+    return y;
+
+
+}
+//====================================================
+QVariant FsaPlot::abifData(const QString &key) const
+{
+    if (!mR)
+        return QVariant();
+
+    return mR->data(key);
 }
 
+const LinearRegression &FsaPlot::regression() const
+{
+    return mRegression;
+}
+//====================================================
 
-QList<int> FsaPlot::detectPeak(int xMin,int yMin, int yMax)
+void FsaPlot::detectRefPeaks()
 {
 
+    int xMin = mLeftLine->start->key();
+    double yMin = mBottomLine->start->value();
+    double yMax = mTopLine->start->value();
 
+    detectRefPeaks(xMin,yMin,yMax);
 
-
-
-    QVector<double> list = mDatas[ID_Y4];
+}
+//====================================================
+void FsaPlot::detectRefPeaks(int xMin, double yMin, double yMax, int dyeId)
+{
+    QVector<double> list = dyeData(dyeId);
 
     QVector<int> x;
     QVector<double> y;
 
-
-
+    // First , filtering data out of the box
     for (int i=0; i< list.size(); ++i)
     {
         if ( (list.at(i) >= yMin) &&  (list.at(i) <= yMax ) && (i >= xMin))
         {
             x.append(i);
             y.append(list.at(i));
-
         }
-
-
-
     }
 
+    mRefValues.clear();
 
+    // Compute derivate
     QVector<double> delta(diff(y));
-
+    // detect peaks by looking change + to -
     int old = delta.first();
-    QList<int> dot ;
     for (int i=0; i<delta.size(); ++i)
     {
         double value = delta.at(i);
-
         if ( (old > 0) && (value < 0))
-        {
-            qDebug()<<"match" <<old<<value;
-            dot.append(x[i]);
-        }
-
+            mRefValues.append(x[i]);
         old = value;
-
     }
 
 
-    qDebug()<<dot;
 
-    QCPItemLine * line = new QCPItemLine(this);
+    mRegression.set(mRefValues, mRefKeys);
 
-    line->start->setCoords(0, yMin);
-    line->end->setCoords(list.size(), yMin);
-    line->setSelectable(true);
-
-    addItem(line);
+    qDebug()<<mRegression.slope();
+    qDebug()<<mRegression.intercept();
 
 
-
-
-    foreach (int x, dot )
+    foreach (int x, mRefValues )
     {
-        QCPItemPixmap * pix = new QCPItemPixmap(this);
-
-        QPixmap p(":/loc.png");
-        p = p.scaled(16,16);
-
-
-        pix->setPixmap(p);
-
-
-        pix->topLeft->setCoords(x-8, 2500);
-
+        QCPItemText * pix = new QCPItemText(this);
+        pix->setText(QString::number(qFloor(mRegression.y(x))) + QString(" kb"));
+        pix->position->setCoords(x,-10);
         addItem(pix);
-
     }
 
-
-
-
-
-    return QList<int> ();
-
+    replot();
+    repaint();
 
 
 }
-
-QVector<double> FsaPlot::diff( QVector<double> list)
+//====================================================
+bool FsaPlot::setFileName(const QString& filename)
 {
+    if (!QFile::exists(filename))
+        return false;
 
-    QVector<double> out;
-
-    for (int i=0; i<list.size()-1; ++i)
-    {
-
-        out.append(list.at(i+1) - list.at(i));
-
-    }
-
-    return out;
-
-
-}
-
-void FsaPlot::setFileName(const QString& filename)
-{
-    if (filename.isEmpty())
-        return ;
-
+    if (mR)
+        delete mR;
 
     mCurrentFile = filename;
+    mR = new AbifReader(mCurrentFile);
 
 
-    AbifReader r = AbifReader(mCurrentFile);
+    if (!mR->isAbif())
+        return false;
 
 
-    QVariantList y1  = r.data("DATA.1").toList();
-    QVariantList y2  = r.data("DATA.2").toList();
-    QVariantList y3  = r.data("DATA.3").toList();
-    QVariantList y4  = r.data("DATA.4").toList();
-
-    int size = y1.size();
-
-    mDatas.append(QVector<double> (size));
-    mDatas.append(QVector<double> (size));
-    mDatas.append(QVector<double> (size));
-    mDatas.append(QVector<double> (size));
-    mDatas.append(QVector<double> (size));
-
-
-
-    for (int i=0; i<size; ++i)
+    for (int i=0; i<dyeCount(); ++i)
     {
 
+        QVariantList raw  = abifData(QString("DATA.%1").arg(i+1)).toList();
+        QVector<double> x;
+        QVector<double> y;
 
-        mDatas[ID_X][i] = i;
-        mDatas[ID_Y1][i]= y1.at(i).toDouble();
-        mDatas[ID_Y2][i]= y2.at(i).toDouble();
-        mDatas[ID_Y3][i]= y3.at(i).toDouble();
-        mDatas[ID_Y4][i]= y4.at(i).toDouble();
+        for (int i=0; i<raw.size(); ++i)
+        {
+            x.append(i);
+            y.append(raw.at(i).toDouble());
+        }
 
+        addGraph();
+        graph()->setData(x,y);
+        graph()->setPen(QPen(dyeColor(i)));
 
+        x.clear();
+        y.clear();
     }
 
-
-
-    addGraph();
-    graph(0)->setData( mDatas[ID_X],  mDatas[ID_Y1]);
-    graph(0)->setPen(QPen(Qt::green));
-
-    addGraph();
-    graph(1)->setData(mDatas[ID_X], mDatas[ID_Y2]);
-    graph(1)->setPen(QPen(Qt::blue));
-
-    addGraph();
-    graph(2)->setData(mDatas[ID_X], mDatas[ID_Y3]);
-    graph(2)->setPen(QPen(Qt::black));
-
-    addGraph();
-    graph(3)->setData(mDatas[ID_X], mDatas[ID_Y4]);
-    graph(3)->setPen(QPen(Qt::red));
-
-
-
-
-
-
-    //load data
-
-
-
-    //    QVector<double> y(ref.size());
-
-
-
-
-    //    QFile file("testsacha.txt");
-
-    //    QTextStream stream(&file);
-
-    //    if (!file.open(QIODevice::WriteOnly))
-    //        return;
-
-
-    //        for (int i=0; i<ref.size(); ++i)
-    //        {
-    //            x[i] = i;
-    //            y[i] = ref.at(i).toDouble();
-
-    //            stream<<y[i]<<"\n";
-    //        }
-
-
-    //file.close();
-
-
-    //            addGraph();
-    //            graph(0)->setData(x, y);
-    //            graph(0)->setPen(QPen(Qt::red));
-
-
-
-
-    //qSort(y.begin(), y.end(), qGreater<double>());
-
-    //  QVariantList listB = r.data("DATA.4").toList();
-
-
-    //    QVector<double> a(listA.size());
-    //    QVector<double> b(listA.size());
-
-
-    //    for (int i=0; i<listA.size(); ++i)
-    //    {
-    //        x[i] = i;
-    //        a[i] = listA.at(i).toDouble();
-    //        b[i] = listB.at(i).toDouble();
-    //    }
-
-
-    //    addGraph();
-    //    graph(0)->setData(x, a);
-    //    graph(0)->setPen(QPen(Qt::blue));
-
-
-    //    addGraph();
-    //    graph(1)->setData(x, b);
-    //    graph(1)->setPen(QPen(Qt::green));
-
-
-
-    ////    // give the axes some labels:
-    ////    xAxis->setLabel("x");
-    ////    yAxis->setLabel("y");
 
     setInteraction(QCP::iRangeZoom,true);
     setInteraction(QCP::iRangeDrag,true);
+
+
+
+
+
+
     replot();
     rescaleAxes();
 
 
+    QPen pen(Qt::darkGray);
+    pen.setStyle(Qt::DashLine);
+    pen.setWidth(1);
+
+
+
+
+    mLeftLine->start->setTypeX(QCPItemPosition::ptPlotCoords);
+    mLeftLine->start->setTypeY(QCPItemPosition::ptViewportRatio);
+    mLeftLine->end->setTypeX(QCPItemPosition::ptPlotCoords);
+    mLeftLine->end->setTypeY(QCPItemPosition::ptViewportRatio);
+
+    mBottomLine->start->setTypeX(QCPItemPosition::ptViewportRatio);
+    mBottomLine->start->setTypeY(QCPItemPosition::ptPlotCoords);
+    mBottomLine->end->setTypeX(QCPItemPosition::ptViewportRatio);
+    mBottomLine->end->setTypeY(QCPItemPosition::ptPlotCoords);
+
+
+    mTopLine->start->setTypeX(QCPItemPosition::ptViewportRatio);
+    mTopLine->start->setTypeY(QCPItemPosition::ptPlotCoords);
+    mTopLine->end->setTypeX(QCPItemPosition::ptViewportRatio);
+    mTopLine->end->setTypeY(QCPItemPosition::ptPlotCoords);
+
+
+    mLeftLine->start->setCoords(1287,0);
+    mLeftLine->end->setCoords(1287,1);
+
+
+    mBottomLine->start->setCoords(0,256);
+    mBottomLine->end->setCoords(1,256);
+
+    mTopLine->start->setCoords(0,1600);
+    mTopLine->end->setCoords(1,1600);
+
+
+
+
+    mLeftLine->setPen(pen);
+    mBottomLine->setPen(pen);
+    mTopLine->setPen(pen);
+
+
+    //    addItem(mLeftLine);
+    //    addItem(mBottomLine);
+    //    addItem(mTopLine);
+
+
+
 
 
 
 }
+
+void FsaPlot::updateSelectors()
+{
+
+//    foreach (QCPItemRect * r, mSelectorRects)
+//        removeItem(r);
+
+//    mSelectorRects.clear();
+
+
+    qDeleteAll(mSelectorRects);
+
+    for (int i=0; i<mSelectorModel->rowCount(); ++i)
+    {
+
+        FsaSelectorItem * item = mSelectorModel->item(i);
+        if (!item)
+            return;
+
+
+        QCPItemRect * rect = new QCPItemRect(this);
+
+        rect->topLeft->setTypeX(QCPItemPosition::ptPlotCoords);
+        rect->topLeft->setTypeY(QCPItemPosition::ptViewportRatio);
+
+        rect->bottomRight->setTypeX(QCPItemPosition::ptPlotCoords);
+        rect->bottomRight->setTypeY(QCPItemPosition::ptViewportRatio);
+
+
+        rect->topLeft->setCoords(mRegression.x(item->size), 0);
+        rect->bottomRight->setCoords(mRegression.x(item->size)+100, 1);
+
+        rect->setBrush(QBrush(QColor(255,0,255,50)));
+
+        if (addItem(rect))
+            mSelectorRects.append(rect);
+
+    }
+
+qDebug()<<"selectors updated..";
+replot();
+}
+
+
+void FsaPlot::setLeft(int x)
+{
+
+
+    qDebug()<<x;
+    mLeftLine->start->setCoords(x,0);
+    mLeftLine->end->setCoords(x,1);
+
+    replot();
+
+}
+
+void FsaPlot::setBottom(int y)
+{
+
+    qDebug()<<y;
+
+    mBottomLine->start->setCoords(0, y);
+    mBottomLine->end->setCoords(1, y);
+
+    replot();
+}
+
+void FsaPlot::setTop(int y)
+{
+    qDebug()<<y;
+
+    mTopLine->start->setCoords(0, y);
+    mTopLine->end->setCoords(1, y);
+
+
+    replot();
+}
+
+void FsaPlot::setLeftVisible(bool visible)
+{
+    mLeftLine->setVisible(visible);
+
+}
+
+void FsaPlot::setBottomVisible(bool visible)
+{
+    mBottomLine->setVisible(visible);
+
+}
+
+void FsaPlot::setTopVisible(bool visible)
+{
+    mTopLine->setVisible(visible);
+
+}
+
+void FsaPlot::setSelectorModel(FsaSelectorModel *model)
+{
+    mSelectorModel = model;
+    connect(mSelectorModel,SIGNAL(rowsInserted(QModelIndex,int,int)),this,SLOT(updateSelectors()));
+
+}
+
+
+//======================================================================
+
+ QVector<double> FsaPlot::diff(const QVector<double>& list)
+{
+    QVector<double> out;
+    for (int i=0; i<list.size()-1; ++i)
+        out.append(list.at(i+1) - list.at(i));
+    return out;
+}
+

@@ -17,10 +17,13 @@ FsaViewer::FsaViewer(QWidget *parent) : QWidget(parent)
 
    mBar->addWidget(mDyeButton);
 
+   // set Pannel
+   mPanel->setPlot(mPlot);
 
    QSplitter * splitter = new QSplitter(Qt::Horizontal);
 
    QVBoxLayout * layout = new QVBoxLayout;
+
 
 
    splitter->addWidget(mPlot);
@@ -56,12 +59,37 @@ void FsaViewer::setFileName(const QString &filename)
     for (int i=0; i<mPlot->dyeCount(); ++i)
     {
 
+        QPixmap pix(16,16);
+        pix.fill(mPlot->dyeColor(i));
+
         QAction * action = mDyeButton->menu()->addAction((mPlot->dyeName(i)));
         action->setCheckable(true);
         action->setChecked(true);
+        action->setObjectName(QString::number(i));
+        action->setIcon(QIcon(pix));
+
+        connect(action,SIGNAL(triggered(bool)),this,SLOT(setGraphVisible(bool)));
 
 
     }
+
+
+mPanel->update();
+
+
+
+}
+
+void FsaViewer::setGraphVisible(bool visible)
+{
+
+    QAction * action = qobject_cast<QAction*>(sender());
+    int index = action->objectName().toInt();
+
+    mPlot->graph(index)->setVisible(visible);
+    mPlot->replot();
+
+
 
 
 }

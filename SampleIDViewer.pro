@@ -26,7 +26,11 @@ SOURCES += main.cpp\
     filebrowserwidget.cpp \
     fsaplot.cpp \
     fsaviewer.cpp \
-    fsapanelwidget.cpp
+    fsapanelwidget.cpp \
+    fsaselectormodel.cpp \
+    fsaselectorwidget.cpp \
+    linearregression.cpp \
+    fsaselectoritem.cpp
 
 HEADERS  += mainwindow.h \
     sampleidlistmodel.h \
@@ -40,7 +44,11 @@ HEADERS  += mainwindow.h \
     filebrowserwidget.h \
     fsaplot.h \
     fsaviewer.h \
-    fsapanelwidget.h
+    fsapanelwidget.h \
+    fsaselectormodel.h \
+    fsaselectorwidget.h \
+    linearregression.h \
+    fsaselectoritem.h
 
 FORMS    += mainwindow.ui
 

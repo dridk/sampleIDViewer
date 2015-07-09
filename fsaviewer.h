@@ -13,6 +13,9 @@ public:
 public slots:
     void setFileName(const QString& filename);
 
+  protected slots:
+    void setGraphVisible(bool visible);
+
 private:
     FsaPlot * mPlot;
     QToolBar * mBar;
