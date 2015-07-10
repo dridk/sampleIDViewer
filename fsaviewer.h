@@ -15,12 +15,12 @@ public slots:
 
   protected slots:
     void setGraphVisible(bool visible);
+    void loadDyeActions();
 
 private:
     FsaPlot * mPlot;
     QToolBar * mBar;
     FsaPanelWidget * mPanel;
-
     QToolButton * mDyeButton;
 
 

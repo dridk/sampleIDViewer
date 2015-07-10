@@ -2,79 +2,58 @@
 #include <QSplitter>
 FsaViewer::FsaViewer(QWidget *parent) : QWidget(parent)
 {
-   mPlot = new FsaPlot;
-   mBar = new QToolBar;
-   mPanel = new FsaPanelWidget;
+    mPlot      = new FsaPlot;
+    mBar       = new QToolBar;
+    mPanel     = new FsaPanelWidget;
+    mDyeButton = new QToolButton;
 
-   mDyeButton = new QToolButton;
-   mDyeButton->setText("Dye");
-   mDyeButton->setPopupMode(QToolButton::InstantPopup);
+    mDyeButton->setText("Dye");
+    mDyeButton->setIcon(QIcon(":/chart_curve.png"));
+    mDyeButton->setPopupMode(QToolButton::InstantPopup);
+    mDyeButton->setMenu(new QMenu());
 
-   mDyeButton->setMenu(new QMenu());
-    QAction * startAction = mBar->addAction("Peak Detection");
+    mBar->addWidget(mDyeButton);
+    mBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    mPanel->setPlot(mPlot);
+
+
+    QAction * startAction = mBar->addAction(QIcon(":/control_panel.png"),"Peak Detection");
     startAction->setCheckable(true);
 
-
-   mBar->addWidget(mDyeButton);
-
-   // set Pannel
-   mPanel->setPlot(mPlot);
-
-   QSplitter * splitter = new QSplitter(Qt::Horizontal);
-
-   QVBoxLayout * layout = new QVBoxLayout;
+    // set Pannel
+    QSplitter * splitter = new QSplitter(Qt::Horizontal);
+    QVBoxLayout * layout = new QVBoxLayout;
 
 
+    splitter->addWidget(mPlot);
+    splitter->addWidget(mPanel);
+    layout->addWidget(mBar);
+    layout->addWidget(splitter);
 
-   splitter->addWidget(mPlot);
-   splitter->addWidget(mPanel);
-   layout->addWidget(mBar);
-   layout->addWidget(splitter);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
 
-   layout->setContentsMargins(0,0,0,0);
-   layout->setSpacing(0);
+    setLayout(layout);
 
-   setLayout(layout);
+    splitter->setStretchFactor(0, 10);
+    splitter->setStretchFactor(1, 1);
 
-   splitter->setStretchFactor(0, 10);
-   splitter->setStretchFactor(1, 1);
+    connect(startAction,SIGNAL(triggered(bool)),mPanel,SLOT(setVisible(bool)));
 
-   connect(startAction,SIGNAL(triggered(bool)),mPanel,SLOT(setVisible(bool)));
-
-
-   setFileName("C:/sacha/M.fsa");
-
-
-   resize(800,400);
-
+    setFileName("C:/sacha/M.fsa");
+    resize(800,400);
 }
 
 void FsaViewer::setFileName(const QString &filename)
 {
 
-
     mPlot->setFileName(filename);
+    loadDyeActions();
 
 
-    for (int i=0; i<mPlot->dyeCount(); ++i)
-    {
-
-        QPixmap pix(16,16);
-        pix.fill(mPlot->dyeColor(i));
-
-        QAction * action = mDyeButton->menu()->addAction((mPlot->dyeName(i)));
-        action->setCheckable(true);
-        action->setChecked(true);
-        action->setObjectName(QString::number(i));
-        action->setIcon(QIcon(pix));
-
-        connect(action,SIGNAL(triggered(bool)),this,SLOT(setGraphVisible(bool)));
 
 
-    }
-
-
-mPanel->update();
+    mPanel->update();
 
 
 
@@ -88,9 +67,31 @@ void FsaViewer::setGraphVisible(bool visible)
 
     mPlot->graph(index)->setVisible(visible);
     mPlot->replot();
+}
+
+void FsaViewer::loadDyeActions()
+{
+    mDyeButton->menu()->clear();
+    for (int i=0; i<mPlot->dyeCount(); ++i)
+    {
+        QPixmap pix(16,16);
+        pix.fill(mPlot->dyeColor(i));
+        QAction * action = mDyeButton->menu()->addAction((mPlot->dyeName(i)));
+        action->setCheckable(true);
+        action->setChecked(true);
+        action->setObjectName(QString::number(i));
+
+        QIcon icon;
+
+        icon.addPixmap(pix,QIcon::Normal,QIcon::On);
 
 
+        pix.fill(mPlot->dyeColor(i).darker());
+        icon.addPixmap(pix,QIcon::Normal, QIcon::Off);
 
 
+        action->setIcon(icon);
+        connect(action,SIGNAL(triggered(bool)),this,SLOT(setGraphVisible(bool)));
+    }
 }
 

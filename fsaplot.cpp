@@ -62,7 +62,7 @@ const LinearRegression &FsaPlot::regression() const
 void FsaPlot::detectRefPeaks()
 {
 
-    int xMin = mLeftLine->start->key();
+    int xMin    = mLeftLine->start->key();
     double yMin = mBottomLine->start->value();
     double yMax = mTopLine->start->value();
 
@@ -166,13 +166,6 @@ bool FsaPlot::setFileName(const QString& filename)
 
 
 
-
-
-
-    replot();
-    rescaleAxes();
-
-
     QPen pen(Qt::darkGray);
     pen.setStyle(Qt::DashLine);
     pen.setWidth(1);
@@ -207,66 +200,104 @@ bool FsaPlot::setFileName(const QString& filename)
     mTopLine->start->setCoords(0,1600);
     mTopLine->end->setCoords(1,1600);
 
-
-
-
     mLeftLine->setPen(pen);
     mBottomLine->setPen(pen);
     mTopLine->setPen(pen);
 
 
-    //    addItem(mLeftLine);
-    //    addItem(mBottomLine);
-    //    addItem(mTopLine);
-
-
+    replot();
+    rescaleAxes();
 
 
 
 
 }
 
-void FsaPlot::updateSelectors()
+void FsaPlot::addRegion(const QString &name, int size, int range)
 {
 
-//    foreach (QCPItemRect * r, mSelectorRects)
-//        removeItem(r);
+    qDebug()<<name<<" "<<size<<" "<<range;
 
-//    mSelectorRects.clear();
+    QCPItemRect * rect = new QCPItemRect(this);
 
+    rect->topLeft->setTypeX(QCPItemPosition::ptPlotCoords);
+    rect->topLeft->setTypeY(QCPItemPosition::ptViewportRatio);
 
-    qDeleteAll(mSelectorRects);
+    rect->bottomRight->setTypeX(QCPItemPosition::ptPlotCoords);
+    rect->bottomRight->setTypeY(QCPItemPosition::ptViewportRatio);
 
-    for (int i=0; i<mSelectorModel->rowCount(); ++i)
-    {
+    rect->topLeft->setCoords(mRegression.x(size-range), 0);
+    rect->bottomRight->setCoords(mRegression.x(size+range), 1);
 
-        FsaSelectorItem * item = mSelectorModel->item(i);
-        if (!item)
-            return;
-
-
-        QCPItemRect * rect = new QCPItemRect(this);
-
-        rect->topLeft->setTypeX(QCPItemPosition::ptPlotCoords);
-        rect->topLeft->setTypeY(QCPItemPosition::ptViewportRatio);
-
-        rect->bottomRight->setTypeX(QCPItemPosition::ptPlotCoords);
-        rect->bottomRight->setTypeY(QCPItemPosition::ptViewportRatio);
+    QColor col("#CB99C9");
+    QBrush brush(col, Qt::BDiagPattern);
+    rect->setBrush(brush);
+    rect ->setPen(QPen(Qt::lightGray));
 
 
-        rect->topLeft->setCoords(mRegression.x(item->size), 0);
-        rect->bottomRight->setCoords(mRegression.x(item->size)+100, 1);
 
-        rect->setBrush(QBrush(QColor(255,0,255,50)));
+    mRegionRects.append(rect);
+    addItem(rect);
+    replot();
 
-        if (addItem(rect))
-            mSelectorRects.append(rect);
-
-    }
-
-qDebug()<<"selectors updated..";
-replot();
 }
+
+void FsaPlot::removeRegion(int index)
+{
+    QCPItemRect * item = mRegionRects.at(index);
+    removeItem(item);
+
+    replot();
+}
+
+void FsaPlot::clearRegion()
+{
+
+    qDeleteAll(mRegionRects);
+
+}
+
+//void FsaPlot::updateSelectors()
+//{
+
+////    foreach (QCPItemRect * r, mSelectorRects)
+////        removeItem(r);
+
+////    mSelectorRects.clear();
+
+
+//    qDeleteAll(mSelectorRects);
+
+//    for (int i=0; i<mSelectorModel->rowCount(); ++i)
+//    {
+
+//        FsaSelectorItem * item = mSelectorModel->item(i);
+//        if (!item)
+//            return;
+
+
+//        QCPItemRect * rect = new QCPItemRect(this);
+
+//        rect->topLeft->setTypeX(QCPItemPosition::ptPlotCoords);
+//        rect->topLeft->setTypeY(QCPItemPosition::ptViewportRatio);
+
+//        rect->bottomRight->setTypeX(QCPItemPosition::ptPlotCoords);
+//        rect->bottomRight->setTypeY(QCPItemPosition::ptViewportRatio);
+
+
+//        rect->topLeft->setCoords(mRegression.x(item->size), 0);
+//        rect->bottomRight->setCoords(mRegression.x(item->size)+100, 1);
+
+//        rect->setBrush(QBrush(QColor(255,0,255,50)));
+
+//        if (addItem(rect))
+//            mSelectorRects.append(rect);
+
+//    }
+
+//qDebug()<<"selectors updated..";
+//replot();
+//}
 
 
 void FsaPlot::setLeft(int x)
@@ -303,35 +334,49 @@ void FsaPlot::setTop(int y)
     replot();
 }
 
-void FsaPlot::setLeftVisible(bool visible)
+void FsaPlot::setLeftLineVisible(bool visible)
 {
     mLeftLine->setVisible(visible);
 
 }
 
-void FsaPlot::setBottomVisible(bool visible)
+void FsaPlot::setBottomLineVisible(bool visible)
 {
     mBottomLine->setVisible(visible);
 
 }
 
-void FsaPlot::setTopVisible(bool visible)
+void FsaPlot::setTopLineVisible(bool visible)
 {
     mTopLine->setVisible(visible);
 
 }
 
-void FsaPlot::setSelectorModel(FsaSelectorModel *model)
+void FsaPlot::setLinesVisible(bool visible)
 {
-    mSelectorModel = model;
-    connect(mSelectorModel,SIGNAL(rowsInserted(QModelIndex,int,int)),this,SLOT(updateSelectors()));
+    mLeftLine->setVisible(visible);
+    mBottomLine->setVisible(visible);
+    mTopLine->setVisible(visible);
+
+    replot();
+}
+
+void FsaPlot::setRegionVisible(bool visible)
+{
 
 }
+
+//void FsaPlot::setSelectorModel(FsaSelectorModel *model)
+//{
+//    mSelectorModel = model;
+//    connect(mSelectorModel,SIGNAL(rowsInserted(QModelIndex,int,int)),this,SLOT(updateSelectors()));
+
+//}
 
 
 //======================================================================
 
- QVector<double> FsaPlot::diff(const QVector<double>& list)
+QVector<double> FsaPlot::diff(const QVector<double>& list)
 {
     QVector<double> out;
     for (int i=0; i<list.size()-1; ++i)

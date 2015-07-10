@@ -27,10 +27,12 @@ SOURCES += main.cpp\
     fsaplot.cpp \
     fsaviewer.cpp \
     fsapanelwidget.cpp \
-    fsaselectormodel.cpp \
-    fsaselectorwidget.cpp \
     linearregression.cpp \
-    fsaselectoritem.cpp
+    abstractfsapanelwidget.cpp \
+    fsapeakpanelwidget.cpp \
+    fsaregionitem.cpp \
+    fsaregionmodel.cpp \
+    fsaregionpanelwidget.cpp
 
 HEADERS  += mainwindow.h \
     sampleidlistmodel.h \
@@ -45,12 +47,15 @@ HEADERS  += mainwindow.h \
     fsaplot.h \
     fsaviewer.h \
     fsapanelwidget.h \
-    fsaselectormodel.h \
-    fsaselectorwidget.h \
     linearregression.h \
-    fsaselectoritem.h
+    abstractfsapanelwidget.h \
+    fsapeakpanelwidget.h \
+    fsaregionitem.h \
+    fsaregionmodel.h \
+    fsaregionpanelwidget.h
 
 FORMS    += mainwindow.ui
 
 RESOURCES += \
-    icons.qrc
+    icons.qrc \
+    icons/icons.qrc

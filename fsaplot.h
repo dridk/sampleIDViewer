@@ -4,7 +4,7 @@
 #include "qcustomplot.h"
 #include "abifreader.h"
 #include "linearregression.h"
-#include "fsaselectormodel.h"
+#include "fsaregionitem.h"
 
 #define ID_X 0
 #define ID_Y1 1
@@ -40,23 +40,28 @@ public:
 
 
 
+
 public slots:
     void detectRefPeaks();
     bool setFileName(const QString& filename);
 
-    void updateSelectors();
+
+    void addRegion(const QString& name, int size, int range);
+    void removeRegion(int index);
+    void clearRegion();
 
 
     void setLeft(int x);
     void setBottom(int y);
     void setTop(int y);
 
-    void setLeftVisible(bool visible = true);
-    void setBottomVisible(bool visible = true);
-    void setTopVisible(bool visible = true);
+    void setLeftLineVisible(bool visible = true);
+    void setBottomLineVisible(bool visible = true);
+    void setTopLineVisible(bool visible = true);
+    void setLinesVisible(bool visible = true);
 
+    void setRegionVisible(bool visible = true);
 
-    void setSelectorModel(FsaSelectorModel * model);
 
 private:
 
@@ -68,7 +73,7 @@ private:
     QCPItemRect * mTopRect;
     QCPItemRect * mBottomRect;
 
-    QList<QCPItemRect*> mSelectorRects;
+    QList<QCPItemRect*> mRegionRects;
 
     LinearRegression mRegression;
 
@@ -76,7 +81,6 @@ private:
     QVector<double> mRefKeys;
     QVector<double> mRefValues;
 
-    FsaSelectorModel * mSelectorModel;
 
 
     QString mCurrentFile;

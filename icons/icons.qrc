@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>chart_curve.png</file>
+        <file>control_panel.png</file>
+        <file>cog.png</file>
+    </qresource>
+</RCC>
